@@ -23,16 +23,24 @@
     import {get_default_lil_gui, refresh_displays, ThreeEngine} from "../js/utils/utils_three.js";
     let engine = ThreeEngine.new_default_3d();
 
-    let sphere = {x: 0, y: 0, z: 0};
+    let V_RUN = 3;
+    let V_JUMP = 5
 
-    let W_DOWN = 119;
-    let W_UP = 87;
-    let A_DOWN = 97;
-    let A_UP = 65
-    let S_DOWN = 115;
-    let S_UP = 83;
-    let D_DOWN=100;
-    let D_UP = 68
+    let time = 0;
+
+    let sphere = {x: 0, y: 0, z: 0};
+    let v_z = 0;
+
+    let W = 87;
+    let A = 65
+    let S = 83;
+    let D = 68;
+    let SPACE = 32;
+
+    function draw_robot(engine, location) {
+        engine.draw_debug_sphere([location.x, location.y, location.z], 0.3, 0x00ffff, 1.0);
+        // engine.draw_debug_sphere([location.x, location.y, location.z+0.32], 0.1, 0xff00ff, 1.0);
+    }
 
     // To monitor key presses, I got the three lines below from
     // https://stackoverflow.com/questions/1828613/check-if-a-key-is-down
@@ -41,20 +49,40 @@
     window.onkeydown = function(e) { pressedKeys[e.keyCode] = true; }
 
     engine.animation_loop( ()  => {
+        let dt = engine.get_time_elapsed() - time;
+        let v_x = 0;
+        let v_y = 0;
+        time += dt;
         console.log(pressedKeys);
-        if (pressedKeys[W_UP]) {
-            sphere.y += 0.1;
+        if (pressedKeys[W]) {
+            v_y += 1;
         }
-        if (pressedKeys[S_UP]) {
-            sphere.y -= 0.1;
+        if (pressedKeys[S]) {
+            v_y -= 1;
         }
-        if (pressedKeys[A_UP]) {
-            sphere.x -= 0.1;
+        if (pressedKeys[A]) {
+            v_x -= 1;
         }
-        if (pressedKeys[D_UP]) {
-            sphere.x += 0.1;
+        if (pressedKeys[D]) {
+            v_x += 1;
         }
-        engine.draw_debug_sphere([sphere.x, sphere.y, sphere.z], 0.3, 0x00ffff, 1.0);
+        if (pressedKeys[SPACE] && sphere.z === 0) {
+            v_z = V_JUMP;
+        }
+        if (sphere.z < 0) {
+            sphere.z = 0;
+            v_z = 0;
+        } else {
+            v_z += -9.8*dt;
+            sphere.z += v_z * dt;
+        }
+        if (v_x**2+v_y**2 > 0) {
+            sphere.x += (v_x / Math.sqrt(v_x**2+v_y**2)) * V_RUN * dt;
+            sphere.y += (v_y / Math.sqrt(v_x**2+v_y**2)) * V_RUN * dt;
+        }
+        console.log(sphere);
+
+        draw_robot(engine, sphere);
     });
 
 
