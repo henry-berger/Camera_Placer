@@ -20,7 +20,7 @@
 </head>
 <body>
 <script type="module">
-    import {get_default_lil_gui, refresh_displays, ThreeEngine} from "../js/utils/utils_three.js";
+    import {get_default_lil_gui, refresh_displays, ThreeEngine, z_up_set_object_pose_from_SO3_matrix_and_position} from "../js/utils/utils_three.js";
     let engine = ThreeEngine.new_default_3d();
 
     let V_RUN = 3;
@@ -83,6 +83,8 @@
         console.log(sphere);
 
         draw_robot(engine, sphere);
+        z_up_set_object_pose_from_SO3_matrix_and_position(engine.camera, [[1,0,0],[0,0,-1],[0,1,0]], [sphere.x, sphere.y-2, sphere.z+1]);
+        // z_up_set_object_position(engine.camera, camera_x, camera_y, camera_z);
     });
 
 
