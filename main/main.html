@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Camera Placer</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {get_default_lil_gui, refresh_displays, ThreeEngine, z_up_set_object_pose_from_SO3_matrix_and_position} from "../js/utils/utils_three.js";
+    let engine = ThreeEngine.new_default_3d();
+
+    let V_RUN = 3;
+    let V_JUMP = 5
+
+    let time = 0;
+
+    let sphere = {x: 0, y: 0, z: 0};
+    let v_z = 0;
+
+    let W = 87;
+    let A = 65
+    let S = 83;
+    let D = 68;
+    let SPACE = 32;
+
+    function draw_robot(engine, location) {
+        engine.draw_debug_sphere([location.x, location.y, location.z], 0.3, 0x00ffff, 1.0);
+        // engine.draw_debug_sphere([location.x, location.y, location.z+0.32], 0.1, 0xff00ff, 1.0);
+    }
+
+    // To monitor key presses, I got the three lines below from
+    // https://stackoverflow.com/questions/1828613/check-if-a-key-is-down
+    let pressedKeys = {};
+    window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
+    window.onkeydown = function(e) { pressedKeys[e.keyCode] = true; }
+
+    engine.animation_loop( ()  => {
+        let dt = engine.get_time_elapsed() - time;
+        let v_x = 0;
+        let v_y = 0;
+        time += dt;
+        console.log(pressedKeys);
+        if (pressedKeys[W]) {
+            v_y += 1;
+        }
+        if (pressedKeys[S]) {
+            v_y -= 1;
+        }
+        if (pressedKeys[A]) {
+            v_x -= 1;
+        }
+        if (pressedKeys[D]) {
+            v_x += 1;
+        }
+        if (pressedKeys[SPACE] && sphere.z === 0) {
+            v_z = V_JUMP;
+        }
+        if (sphere.z < 0) {
+            sphere.z = 0;
+            v_z = 0;
+        } else {
+            v_z += -9.8*dt;
+            sphere.z += v_z * dt;
+        }
+        if (v_x**2+v_y**2 > 0) {
+            sphere.x += (v_x / Math.sqrt(v_x**2+v_y**2)) * V_RUN * dt;
+            sphere.y += (v_y / Math.sqrt(v_x**2+v_y**2)) * V_RUN * dt;
+        }
+        console.log(sphere);
+
+        draw_robot(engine, sphere);
+        z_up_set_object_pose_from_SO3_matrix_and_position(engine.camera, [[1,0,0],[0,0,-1],[0,1,0]], [sphere.x, sphere.y-2, sphere.z+1]);
+        // z_up_set_object_position(engine.camera, camera_x, camera_y, camera_z);
+    });
+
+
+
+</script>
+</body>
+</html>

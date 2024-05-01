@@ -101,8 +101,8 @@ export class ThreeEngine {
 
         const pointLight3 = new THREE.PointLight(0xffffff, 100, 1000); // color, intensity, distance
         // pointLight2.position.set(-2, 3, 1); // position the light
-        z_up_set_object_position(pointLight2, 2, -1, -3);
-        pointLight2.castShadow = true;
+        z_up_set_object_position(pointLight3, 2, -1, -3);
+        pointLight3.castShadow = true;
         // pointLight2.shadow.mapSize.width = 2048;
         // pointLight2.shadow.mapSize.height = 2048;
         // scene.add(pointLight3);
@@ -152,8 +152,11 @@ export class ThreeEngine {
     static new_default_3d(camera_x=3, camera_y=2, camera_z=1, orthographic_camera=false) {
         let engine = ThreeEngine.#new_default_generic(orthographic_camera);
         z_up_set_object_position(engine.camera, camera_x, camera_y, camera_z);
-        engine.camera.lookAt(0,0,0);
+        // engine.camera.lookAt(0,0,0);
         engine.is2D = false;
+
+        engine.controls.enableRotate = false;
+        engine.controls.enableTranslate = false;
 
         if (orthographic_camera) {
             window.addEventListener('resize', engine.on_window_resize_orthographic.bind(engine), false);
@@ -700,9 +703,9 @@ export class ThreeEngine {
 
             f();
     
-            if (this.controls) {
-                this.controls.update();
-            }
+            // if (this.controls) {
+            //     this.controls.update();
+            // }
     
             this.renderer.render(this.scene, this.camera);
 
