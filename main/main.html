@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Camera Placer</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {get_default_lil_gui, refresh_displays, ThreeEngine} from "../js/utils/utils_three.js";
+    let engine = ThreeEngine.new_default_3d();
+
+    let sphere = {x: 0, y: 0, z: 0};
+
+    let W_DOWN = 119;
+    let W_UP = 87;
+    let A_DOWN = 97;
+    let A_UP = 65
+    let S_DOWN = 115;
+    let S_UP = 83;
+    let D_DOWN=100;
+    let D_UP = 68
+
+    // To monitor key presses, I got the three lines below from
+    // https://stackoverflow.com/questions/1828613/check-if-a-key-is-down
+    let pressedKeys = {};
+    window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
+    window.onkeydown = function(e) { pressedKeys[e.keyCode] = true; }
+
+    engine.animation_loop( ()  => {
+        console.log(pressedKeys);
+        if (pressedKeys[W_UP]) {
+            sphere.y += 0.1;
+        }
+        if (pressedKeys[S_UP]) {
+            sphere.y -= 0.1;
+        }
+        if (pressedKeys[A_UP]) {
+            sphere.x -= 0.1;
+        }
+        if (pressedKeys[D_UP]) {
+            sphere.x += 0.1;
+        }
+        engine.draw_debug_sphere([sphere.x, sphere.y, sphere.z], 0.3, 0x00ffff, 1.0);
+    });
+
+
+
+</script>
+</body>
+</html>
