@@ -24,12 +24,14 @@
     let engine = ThreeEngine.new_default_3d();
 
     let V_RUN = 3;
-    let V_JUMP = 5
+    let V_JUMP = 5;
+    let OMEGA = 1;
 
     let time = 0;
 
     let sphere = {x: 0, y: 0, z: 0};
     let v_z = 0;
+    let theta = 0;
 
     let W = 87;
     let A = 65
@@ -48,23 +50,20 @@
     window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
     window.onkeydown = function(e) { pressedKeys[e.keyCode] = true; }
 
-    engine.animation_loop( ()  => {
-        let dt = engine.get_time_elapsed() - time;
-        let v_x = 0;
-        let v_y = 0;
-        time += dt;
-        console.log(pressedKeys);
+    function update_velocity(dt) {
+        let omega = 0;
+        let v = 0;
         if (pressedKeys[W]) {
-            v_y += 1;
+            v += 1;
         }
         if (pressedKeys[S]) {
-            v_y -= 1;
+            v -= 1;
         }
         if (pressedKeys[A]) {
-            v_x -= 1;
+            omega += 1;
         }
         if (pressedKeys[D]) {
-            v_x += 1;
+            omega -= 1;
         }
         if (pressedKeys[SPACE] && sphere.z === 0) {
             v_z = V_JUMP;
@@ -74,13 +73,23 @@
             v_z = 0;
         } else {
             v_z += -9.8*dt;
-            sphere.z += v_z * dt;
         }
-        if (v_x**2+v_y**2 > 0) {
-            sphere.x += (v_x / Math.sqrt(v_x**2+v_y**2)) * V_RUN * dt;
-            sphere.y += (v_y / Math.sqrt(v_x**2+v_y**2)) * V_RUN * dt;
+        theta += OMEGA * omega * dt;
+        let v_x = v * V_RUN * Math.cos(theta);
+        let v_y = v * V_RUN * Math.sin(theta);
+        return [v_x, v_y, v_z];
+    }
+
+    engine.animation_loop( ()  => {
+        let dt = engine.get_time_elapsed() - time;
+        time += dt;
+        let v = update_velocity(dt);
+
+        sphere.z += dt * v[2];
+        if (v[0]**2+v[1]**2 > 0) {
+            sphere.x += (v[0] / Math.sqrt(v[0]**2+v[1]**2)) * dt;
+            sphere.y += (v[1] / Math.sqrt(v[0]**2+v[1]**2)) * dt;
         }
-        console.log(sphere);
 
         draw_robot(engine, sphere);
         z_up_set_object_pose_from_SO3_matrix_and_position(engine.camera, [[1,0,0],[0,0,-1],[0,1,0]], [sphere.x, sphere.y-2, sphere.z+1]);
