@@ -51,6 +51,15 @@
     let D = 68;
     let SPACE = 32;
 
+    function x_to_so3(x) {
+        let ry = Rx(x[3]);
+        let rz = Rz(x[4]);
+        let camera_orn = mul_matrix_matrix(rz, ry);
+        camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
+        camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ);
+        return camera_orn;
+    }
+
     function draw_robot(engine, location, heading) {
         engine.draw_debug_sphere([location.x, location.y, location.z+0.15], 0.3, 0x00ffff, 1.0);
         let offset=0.17;
@@ -102,11 +111,7 @@
 
         function f(x) {
             // let camera_orn = mul_matrix_matrix(so3_exp(hat(x[0])), CAMERA_BASE);
-            let ry = Rx(x[3]);
-            let rz = Rz(x[4]);
-            let camera_orn = mul_matrix_matrix(rz, ry);
-            camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
-            camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ);
+            let camera_orn = x_to_so3(x)
             // camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
             let xhat = camera_orn.map(row => row[0]);
             let yhat = camera_orn.map(row => row[1]);
@@ -129,17 +134,7 @@
         // camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ);
         // let camera_pos = [sphere.x-2*Math.cos(heading), sphere.y-2*Math.sin(heading), sphere.z+1]
 
-        let ry = Ry(x[3]);
-        let rz = Rz(x[4]);
-        let camera_orn = mul_matrix_matrix(rz, ry);
-        console.log(camera_orn);
-        camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
-        console.log(camera_orn);
-        camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ);
-        console.log(camera_orn);
-        // console.log(camera_orn);
-        // console.log(x);
-        // console.log([x[0],x[1],x[2]]);
+        let camera_orn = x_to_so3(x);
         z_up_set_object_pose_from_SO3_matrix_and_position(engine.camera, camera_orn, [x[0],x[1],x[2]]);
     });
 
