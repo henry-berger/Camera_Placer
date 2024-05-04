@@ -37,6 +37,7 @@
     // let orn_x = [0, 0];
     // let pos_x = [0,0,0];
     let x = [-2,0,1,0,0];
+    let jump_v = [0,0];
     let prev_x = x;
 
     let time = 0;
@@ -70,12 +71,20 @@
                 [0,0,0,1]];
     }
 
-    function draw_robot(engine, location, heading) {
+    function draw_robot(engine, location, heading, v) {
         engine.draw_debug_sphere([location.x, location.y, location.z+0.15], 0.3, 0x00ffff, 1.0);
         let offset=0.17;
         engine.draw_debug_sphere([location.x+offset*Math.cos(heading), location.y+offset*Math.sin(heading), location.z+offset+0.15], 0.1, 0xffffff, 1.0);
         let eye_offset=0.173;
         engine.draw_debug_sphere([location.x+eye_offset*Math.cos(heading), location.y+eye_offset*Math.sin(heading), location.z+eye_offset+0.15], 0.096, 0x000000, 1.0);
+
+        let leg_offset = 0.1;
+        let foot_offset=0;
+        if (v[0]**2+v[1]**2>0) {
+            foot_offset = Math.sin(engine.get_time_elapsed()*8)*0.75;
+        }
+        engine.draw_debug_sphere([location.x+leg_offset*Math.cos(heading-1.4+leg_offset), location.y+leg_offset*Math.sin(heading-1.4+foot_offset), location.z-0.16], 0.096, 0x000000, 1.0);
+        engine.draw_debug_sphere([location.x+leg_offset*Math.cos(heading+1.4+foot_offset), location.y+leg_offset*Math.sin(heading+1.4+foot_offset), location.z-0.16], 0.096, 0x000000, 1.0);
     }
 
     // To monitor key presses, I got the three lines below from
@@ -91,16 +100,22 @@
         if (pressedKeys[S]) {v -= 1;}
         if (pressedKeys[A]) {omega += 1;}
         if (pressedKeys[D]) {omega -= 1;}
-        if (pressedKeys[SPACE] && sphere.z === 0) {v_z = V_JUMP;}
-        if (sphere.z < 0) {
+        theta += OMEGA * omega * dt;
+        let v_x = v * V_RUN * Math.cos(theta);
+        let v_y = v * V_RUN * Math.sin(theta);
+        if (pressedKeys[SPACE] && sphere.z <= 0) {
+            v_z = V_JUMP;
+            jump_v = [v_x, v_y];
+        }
+        else if (sphere.z <= 0) {
             sphere.z = 0;
             v_z = 0;
         } else {
             v_z += -9.8*dt;
+            v_x = jump_v[0];
+            v_y = jump_v[1];
+            theta -= OMEGA * omega * dt;
         }
-        theta += OMEGA * omega * dt;
-        let v_x = v * V_RUN * Math.cos(theta);
-        let v_y = v * V_RUN * Math.sin(theta);
         return [v_x, v_y, v_z];
     }
 
@@ -120,7 +135,7 @@
             heading = Math.atan2(v[1],v[0]);
         }
 
-        draw_robot(engine, sphere, theta);
+        draw_robot(engine, sphere, theta, v);
         // let camera_orn = mul_matrix_matrix(so3_exp(hat(orn_x)), CAMERA_BASE);
 
         prev_x = x;
@@ -153,7 +168,7 @@
             let W_TWIST_BARR = 1;
             let TWIST_LIM = 0.1;
             let W_TWIST = 0.25;
-            let W_UPRIGHT = 1;
+            let W_UPRIGHT = 3;
             //******************* Cost term calculations **************************
 
 
