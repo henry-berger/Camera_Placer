@@ -29,6 +29,10 @@ export function sqrtpi2(x) {
     return Math.PI * Math.sqrt(0.5*(x+1));
 }
 
+export function sigmoid(x) {
+    return 1 / (1+Math.exp(-x));
+}
+
 export function so3_log(m) {
     let tr = m[0][0] + m[1][1] + m[2][2];
     let beta = Math.acos((tr-1)/2);

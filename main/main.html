@@ -22,7 +22,7 @@
 <script type="module">
     import {get_default_lil_gui, refresh_displays, ThreeEngine, z_up_get_object_pose_as_SO3_matrix_and_position, z_up_set_object_pose_from_SO3_matrix_and_position} from "../js/utils/utils_three.js";
     import {mul_matrix_matrix} from "../js/utils/utils_math.js";
-    import {Rx, Ry, Rz, so3_exp, hat, dot} from "../js/utils/utils_henry.js";
+    import {Rx, Ry, Rz, so3_exp, hat, dot, sigmoid} from "../js/utils/utils_henry.js";
     import {optimization_solve} from "../js/utils/utils_optimization.js";
 
     let engine = ThreeEngine.new_default_3d();
@@ -112,11 +112,15 @@
             let yhat = camera_orn.map(row => row[1]);
             let zhat = camera_orn.map(row => -row[2]);
             let pos_disp = [sphere.x-x[0], sphere.y-x[1], sphere.z-x[2]];
-            return (dot(pos_disp, pos_disp)-2)**2 + (x[2]-1)**2 + (dot(pos_disp, xhat))**2 + (dot(pos_disp, yhat))**2;
+            let dist_term = (dot(pos_disp, pos_disp)-2)**2;
+            let height_term = (x[2]-1)**2;
+            let sight_term = (dot(pos_disp, xhat))**2 + (dot(pos_disp, yhat))**2;
+            let aim_term = 1-sigmoid(dot(zhat, v));
+            return dist_term + height_term + sight_term + 5*aim_term;
         }
 
         x = optimization_solve(f, x, 100,"bfgs");
-        if (Math.max(x) > 100) {
+        while (Math.max(x) > 30) {
             x = [0,0,0,0,0];
             x = optimization_solve(f, x, 100,"bfgs");
         }
