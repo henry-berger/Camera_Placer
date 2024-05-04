@@ -22,7 +22,7 @@
 <script type="module">
     import {get_default_lil_gui, refresh_displays, ThreeEngine, z_up_get_object_pose_as_SO3_matrix_and_position, z_up_set_object_pose_from_SO3_matrix_and_position} from "../js/utils/utils_three.js";
     import {mul_matrix_matrix} from "../js/utils/utils_math.js";
-    import {Rx, Ry, Rz, so3_exp, hat, dot, sigmoid} from "../js/utils/utils_henry.js";
+    import {Rx, Ry, Rz, so3_exp, barrier, dot, sigmoid, dist_se4} from "../js/utils/utils_henry.js";
     import {optimization_solve} from "../js/utils/utils_optimization.js";
 
     let engine = ThreeEngine.new_default_3d();
@@ -37,6 +37,7 @@
     // let orn_x = [0, 0];
     // let pos_x = [0,0,0];
     let x = [-2,0,1,0,0];
+    let prev_x = x;
 
     let time = 0;
 
@@ -52,12 +53,20 @@
     let SPACE = 32;
 
     function x_to_so3(x) {
-        let ry = Rx(x[3]);
+        let ry = Ry(x[3]*0);
         let rz = Rz(x[4]);
         let camera_orn = mul_matrix_matrix(rz, ry);
         camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
         camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ);
         return camera_orn;
+    }
+
+    function x_to_se3(x) {
+        let R = x_to_so3(x);
+        return [[R[0][0], R[0][1], R[0][2], x[0]],
+                [R[1][0], R[1][1], R[1][2], x[1]],
+                [R[2][0], R[2][1], R[2][2], x[2]],
+                [0,0,0,1]];
     }
 
     function draw_robot(engine, location, heading) {
@@ -109,10 +118,14 @@
         draw_robot(engine, sphere, theta);
         // let camera_orn = mul_matrix_matrix(so3_exp(hat(orn_x)), CAMERA_BASE);
 
+        prev_x = x;
+
         function f(x) {
             // let camera_orn = mul_matrix_matrix(so3_exp(hat(x[0])), CAMERA_BASE);
             let camera_orn = x_to_so3(x)
             // camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
+            let vnorm = Math.sqrt(v[0]**2+v[1]**2+v[2]**2);
+            let vhat = [v[0]/vnorm, v[1]/vnorm, v[2]/vnorm];
             let xhat = camera_orn.map(row => row[0]);
             let yhat = camera_orn.map(row => row[1]);
             let zhat = camera_orn.map(row => -row[2]);
@@ -120,8 +133,9 @@
             let dist_term = (dot(pos_disp, pos_disp)-2)**2;
             let height_term = (x[2]-1)**2;
             let sight_term = (dot(pos_disp, xhat))**2 + (dot(pos_disp, yhat))**2;
-            let aim_term = 1-sigmoid(dot(zhat, v));
-            return dist_term + height_term + sight_term + 5*aim_term;
+            let aim_term = 1-sigmoid(3*dot(zhat, vhat));
+            let vel_term = dist_se4(x_to_se3(prev_x), x_to_se3(x))**2;
+            return dist_term + height_term + sight_term + 3*aim_term + barrier(0.1-vel_term);
         }
 
         x = optimization_solve(f, x, 100,"bfgs");
@@ -129,6 +143,7 @@
             x = [0,0,0,0,0];
             x = optimization_solve(f, x, 100,"bfgs");
         }
+
 
         // camera_orn = mul_matrix_matrix(Rz(heading), camera_orn);
         // camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ);

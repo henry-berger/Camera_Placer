@@ -5,6 +5,14 @@ export function dot(x, y) {
     return x[0]*y[0]+x[1]*y[1]+x[2]*y[2];
 }
 
+export function barrier(x) {
+    if (x < 0) {
+        return 3*(x**2);
+    } else {
+        return 0;
+    }
+}
+
 export function sqrtpi2(x) {
     return Math.PI * Math.sqrt(0.5*(x+1));
 }
@@ -211,7 +219,6 @@ export function dist_se4(m1, m2) {
     let disp = mul_matrix_matrix(se3_inv(m1), m2);
     let lndisp = se3_log(disp);
 
-    let m4 = mul_matrix_matrix(m1, se3_exp(mul_matrix_scalar(lndisp, settings.t)));
     let vlndisp = vee(lndisp);
     let sum = 0;
     vlndisp.forEach(num => sum += num**2);
