@@ -43,6 +43,7 @@
 
     let sphere = {x: 0, y: 0, z: 0};
     let v_z = 0;
+    let last_nonzero_v = [1,0,0];
     let theta = 0;
     let heading=0;
 
@@ -107,6 +108,10 @@
         let dt = engine.get_time_elapsed() - time;
         time += dt;
         let v = update_velocity(dt);
+        if (v[0]**2+v[1]**2 > 0) {
+            last_nonzero_v = v;
+        }
+
 
         sphere.z += dt * v[2];
         if (v[0]**2+v[1]**2 > 0) {
@@ -130,7 +135,8 @@
             let zhat = camera_orn.map(row => -row[2]);
             let pnorm = Math.sqrt(pos_disp[0]**2+pos_disp[1]**2+pos_disp[2]**2);
             let phat = [pos_disp[0]/pnorm, pos_disp[1]/pnorm, pos_disp[2]/pnorm];
-            let vnorm = Math.sqrt(v[0]**2+v[1]**2+(v[2]/5)**2);
+            let vnorm = Math.sqrt(last_nonzero_v[0]**2+last_nonzero_v[1]**2+(last_nonzero_v[2]/5)**2);
+            let vhat = [last_nonzero_v[0]/vnorm, last_nonzero_v[1]/vnorm, (last_nonzero_v[2]/5)/vnorm];
 
             //
 
@@ -158,13 +164,8 @@
             let y_sight_term = (dot(phat, yhat))**2;
             let z_sight_term = barrier(dot(phat, zhat));
             let twist_term = dist_se4(x_to_se3(prev_x), x_to_se3(x))**2;
-            let aim_term = 0;
-            let aim_term_2 = 0;
-            if (vnorm > 0) {
-                let vhat = [v[0]/vnorm, v[1]/vnorm, (v[2]/5)/vnorm];
-                aim_term = barrier(dot(zhat, vhat));
-                aim_term_2 = (1-dot(zhat, vhat))**2;
-            }
+            let aim_term = barrier(dot(zhat, vhat));
+            let aim_term_2 = (1-dot(zhat, vhat))**2;
             let upright_term = barrier(dot(zhat, [0,0,1]));
             return W_DIST * dist_term
                 + W_HT * height_term
