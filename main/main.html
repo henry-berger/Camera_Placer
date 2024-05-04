@@ -48,10 +48,12 @@
     }
     let engine = ThreeEngine.new_default_3d();
 
-    let V_RUN = 3;
+    let V_RUN = 5;
     let V_JUMP = 5;
     let OMEGA = 1;
+    // Representation of the default camera frame in global coords
     let CAMERA_BASE = [[1,0,0],[0,0,-1],[0,1,0]];
+    // Conversion from default camera frame to whatever the Three engine uses
     let CAMERA_VIZ = [[0,0,-1],[0,1,0],[1,0,0]];
 
     let time = 0;
@@ -68,11 +70,11 @@
     let SPACE = 32;
 
     function draw_robot(engine, location, heading) {
-        engine.draw_debug_sphere([location.x, location.y, location.z], 0.3, 0x00ffff, 1.0);
+        engine.draw_debug_sphere([location.x, location.y, location.z+0.15], 0.3, 0x00ffff, 1.0);
         let offset=0.17;
-        engine.draw_debug_sphere([location.x+offset*Math.cos(heading), location.y+offset*Math.sin(heading), location.z+offset], 0.1, 0xffffff, 1.0);
+        engine.draw_debug_sphere([location.x+offset*Math.cos(heading), location.y+offset*Math.sin(heading), location.z+offset+0.15], 0.1, 0xffffff, 1.0);
         let eye_offset=0.173;
-        engine.draw_debug_sphere([location.x+eye_offset*Math.cos(heading), location.y+eye_offset*Math.sin(heading), location.z+eye_offset], 0.096, 0x000000, 1.0);
+        engine.draw_debug_sphere([location.x+eye_offset*Math.cos(heading), location.y+eye_offset*Math.sin(heading), location.z+eye_offset+0.15], 0.096, 0x000000, 1.0);
     }
 
     // To monitor key presses, I got the three lines below from
@@ -123,16 +125,11 @@
             heading = Math.atan2(v[1],v[0]);
         }
 
-
         draw_robot(engine, sphere, theta);
-        // let camera_orn = mul_matrix_matrix(Rz(theta), [[0,-1,0],[1,0,0],[0,0,-1]]);
         let camera_orn = mul_matrix_matrix(Rz(heading), CAMERA_BASE);
         camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ)
-        console.log(camera_orn);
         let camera_pos = [sphere.x-2*Math.cos(heading), sphere.y-2*Math.sin(heading), sphere.z+1]
         z_up_set_object_pose_from_SO3_matrix_and_position(engine.camera, camera_orn, camera_pos);
-        // z_up_set_object_position(engine.camera, camera_x, camera_y, camera_z);
-        console.log(z_up_get_object_pose_as_SO3_matrix_and_position(engine.camera));
     });
 
 
