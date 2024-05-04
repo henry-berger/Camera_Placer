@@ -124,18 +124,20 @@
             // let camera_orn = mul_matrix_matrix(so3_exp(hat(x[0])), CAMERA_BASE);
             let camera_orn = x_to_so3(x)
             // camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
-            let vnorm = Math.sqrt(v[0]**2+v[1]**2+v[2]**2);
-            let vhat = [v[0]/vnorm, v[1]/vnorm, v[2]/vnorm];
+            let vnorm = Math.sqrt(v[0]**2+v[1]**2+(v[2]/2)**2);
+            let vhat = [v[0]/vnorm, v[1]/vnorm, (v[2]/2)/vnorm];
             let xhat = camera_orn.map(row => row[0]);
             let yhat = camera_orn.map(row => row[1]);
             let zhat = camera_orn.map(row => -row[2]);
-            let pos_disp = [sphere.x-x[0], sphere.y-x[1], sphere.z-x[2]];
-            let dist_term = (dot(pos_disp, pos_disp)-2)**2;
+            let pos_disp = [sphere.x-x[0], sphere.y-x[1], 0.5+sphere.z-x[2]];
+            let pnorm = Math.sqrt(pos_disp[0]**2+pos_disp[1]**2+pos_disp[2]**2);
+            let phat = [pos_disp[0]/pnorm, pos_disp[1]/pnorm, pos_disp[2]/pnorm];
+            let dist_term = (dot(pos_disp, pos_disp)-3)**2;
             let height_term = (x[2]-1)**2;
-            let sight_term = (dot(pos_disp, xhat))**2 + (dot(pos_disp, yhat))**2;
-            let aim_term = 1-sigmoid(3*dot(zhat, vhat));
-            let vel_term = dist_se4(x_to_se3(prev_x), x_to_se3(x))**2;
-            return dist_term + height_term + sight_term + 3*aim_term + barrier(0.1-vel_term);
+            let sight_term = (dot(phat, xhat))**2 + (dot(phat, yhat))**2;
+            let aim_term = -sigmoid(4*dot(zhat, vhat));
+            let twist_term = dist_se4(x_to_se3(prev_x), x_to_se3(x))**2;
+            return dist_term + 0.1*height_term + sight_term + 3*aim_term + barrier(0.05-twist_term);
         }
 
         x = optimization_solve(f, x, 100,"bfgs");
