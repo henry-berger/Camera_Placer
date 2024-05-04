@@ -36,7 +36,7 @@
     let CAMERA_VIZ = [[0,0,-1],[0,1,0],[1,0,0]];
     // let orn_x = [0, 0];
     // let pos_x = [0,0,0];
-    let x = [0,0,0,0,0];
+    let x = [-2,0,1,0,0];
 
     let time = 0;
 
@@ -102,29 +102,40 @@
 
         function f(x) {
             // let camera_orn = mul_matrix_matrix(so3_exp(hat(x[0])), CAMERA_BASE);
-            let camera_orn = mul_matrix_matrix(CAMERA_BASE, Rx(x[3]));
-            camera_orn = mul_matrix_matrix(camera_orn, Ry(-x[4]));
+            let ry = Rx(x[3]);
+            let rz = Rz(x[4]);
+            let camera_orn = mul_matrix_matrix(rz, ry);
+            camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
+            camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ);
+            // camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
             let xhat = camera_orn.map(row => row[0]);
             let yhat = camera_orn.map(row => row[1]);
-            let zhat = camera_orn.map(row => row[2]);
+            let zhat = camera_orn.map(row => -row[2]);
             let pos_disp = [sphere.x-x[0], sphere.y-x[1], sphere.z-x[2]];
-            return (dot(pos_disp, pos_disp)-3)**2 + (x[2]-1)**2 + dot(pos_disp, xhat);
+            return (dot(pos_disp, pos_disp)-2)**2 + (x[2]-1)**2 + (dot(pos_disp, xhat))**2 + (dot(pos_disp, yhat))**2;
         }
 
         x = optimization_solve(f, x, 100,"bfgs");
+        if (Math.max(x) > 100) {
+            x = [0,0,0,0,0];
+            x = optimization_solve(f, x, 100,"bfgs");
+        }
 
         // camera_orn = mul_matrix_matrix(Rz(heading), camera_orn);
         // camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ);
         // let camera_pos = [sphere.x-2*Math.cos(heading), sphere.y-2*Math.sin(heading), sphere.z+1]
-        let rx = Rx(x[3]*0);
-        let camera_orn = mul_matrix_matrix(CAMERA_BASE, rx);
+
+        let ry = Ry(x[3]);
+        let rz = Rz(x[4]);
+        let camera_orn = mul_matrix_matrix(rz, ry);
         console.log(camera_orn);
-        let ry = Rz(x[4]);
-        camera_orn = mul_matrix_matrix(ry, camera_orn);
+        camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
+        console.log(camera_orn);
         camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ);
         console.log(camera_orn);
-        console.log(x);
-        console.log([x[0],x[1],x[2]]);
+        // console.log(camera_orn);
+        // console.log(x);
+        // console.log([x[0],x[1],x[2]]);
         z_up_set_object_pose_from_SO3_matrix_and_position(engine.camera, camera_orn, [x[0],x[1],x[2]]);
     });
 
