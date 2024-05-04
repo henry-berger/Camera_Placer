@@ -13,6 +13,15 @@ export function barrier(x) {
     }
 }
 
+export function anyNaN(array) {
+    for (let i = 0; i < array.length; i++) {
+        if (isNaN(array[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 export function sqrtpi2(x) {
     return Math.PI * Math.sqrt(0.5*(x+1));
 }

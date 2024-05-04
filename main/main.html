@@ -22,7 +22,7 @@
 <script type="module">
     import {get_default_lil_gui, refresh_displays, ThreeEngine, z_up_get_object_pose_as_SO3_matrix_and_position, z_up_set_object_pose_from_SO3_matrix_and_position} from "../js/utils/utils_three.js";
     import {mul_matrix_matrix} from "../js/utils/utils_math.js";
-    import {Rx, Ry, Rz, so3_exp, barrier, dot, sigmoid, dist_se4} from "../js/utils/utils_henry.js";
+    import {Rx, Ry, Rz, so3_exp, barrier, dot, sigmoid, dist_se4, anyNaN} from "../js/utils/utils_henry.js";
     import {optimization_solve} from "../js/utils/utils_optimization.js";
 
     let engine = ThreeEngine.new_default_3d();
@@ -121,29 +121,57 @@
         prev_x = x;
 
         function f(x) {
-            // let camera_orn = mul_matrix_matrix(so3_exp(hat(x[0])), CAMERA_BASE);
+            //******************* Geometric calculations **************************
+            // Aim at a point 0.75m above the sphere
+            let pos_disp = [sphere.x-x[0], sphere.y-x[1], 0.75+sphere.z-x[2]];
             let camera_orn = x_to_so3(x)
-            // camera_orn = mul_matrix_matrix(camera_orn, CAMERA_BASE);
-            let vnorm = Math.sqrt(v[0]**2+v[1]**2+(v[2]/2)**2);
-            let vhat = [v[0]/vnorm, v[1]/vnorm, (v[2]/2)/vnorm];
             let xhat = camera_orn.map(row => row[0]);
             let yhat = camera_orn.map(row => row[1]);
             let zhat = camera_orn.map(row => -row[2]);
-            let pos_disp = [sphere.x-x[0], sphere.y-x[1], 0.5+sphere.z-x[2]];
             let pnorm = Math.sqrt(pos_disp[0]**2+pos_disp[1]**2+pos_disp[2]**2);
             let phat = [pos_disp[0]/pnorm, pos_disp[1]/pnorm, pos_disp[2]/pnorm];
-            let dist_term = (dot(pos_disp, pos_disp)-3)**2;
-            let height_term = (x[2]-1)**2;
+            let vnorm = Math.sqrt(v[0]**2+v[1]**2+(v[2]/2)**2);
+
+            //
+
+            //******************* Cost term constants **************************
+            let GOAL_DIST = 3;
+            let GOAL_HEIGHT = 1
+            let W_DIST = 1;
+            let W_HT = 1;
+            let W_SIGHT = 1;
+            let W_AIM = 3;
+            let W_TWIST_BARR = 1;
+            let W_TWIST = 3;
+            let W_UPRIGHT = 1;
+            //******************* Cost term calculations **************************
+
+
+            let dist_term = (dot(pos_disp, pos_disp)-GOAL_DIST)**2;
+            let height_term = (x[2]-GOAL_HEIGHT)**2;
             let sight_term = (dot(phat, xhat))**2 + (dot(phat, yhat))**2;
-            let aim_term = -sigmoid(4*dot(zhat, vhat));
             let twist_term = dist_se4(x_to_se3(prev_x), x_to_se3(x))**2;
-            return dist_term + 0.1*height_term + sight_term + 3*aim_term + barrier(0.05-twist_term);
+            let aim_term = 0;
+            if (vnorm > 0) {
+                let vhat = [v[0]/vnorm, v[1]/vnorm, (v[2]/2)/vnorm];
+                aim_term = -sigmoid(4*dot(zhat, vhat));
+            }
+            let upright_term = barrier(dot(zhat, [0,0,1]));
+            return W_DIST * dist_term
+                + W_HT * height_term
+                + W_SIGHT * sight_term
+                + W_AIM * aim_term
+                + W_TWIST * twist_term**2
+                + W_TWIST_BARR * barrier(0.05-twist_term)
+                + W_UPRIGHT * upright_term;
         }
 
-        x = optimization_solve(f, x, 100,"bfgs");
-        while (Math.max(x) > 30) {
-            x = [0,0,0,0,0];
-            x = optimization_solve(f, x, 100,"bfgs");
+        x = optimization_solve(f, x, 200,"bfgs");
+        while (Math.max(...x) > 30 || Math.min(...x)<-30 || anyNaN(x)) {
+            x = prev_x.map(number => number + Math.random() / 10);
+            console.log("Trying again");
+            x = optimization_solve(f, [0,0,0,0,0], 200,"bfgs");
+            console.log(x)
         }
 
 
@@ -153,6 +181,8 @@
 
         let camera_orn = x_to_so3(x);
         z_up_set_object_pose_from_SO3_matrix_and_position(engine.camera, camera_orn, [x[0],x[1],x[2]]);
+        console.log(engine.get_time_elapsed());
+        console.log(x);
     });
 
 
