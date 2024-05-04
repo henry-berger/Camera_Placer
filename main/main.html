@@ -39,9 +39,12 @@
     let D = 68;
     let SPACE = 32;
 
-    function draw_robot(engine, location) {
+    function draw_robot(engine, location, heading) {
         engine.draw_debug_sphere([location.x, location.y, location.z], 0.3, 0x00ffff, 1.0);
-        // engine.draw_debug_sphere([location.x, location.y, location.z+0.32], 0.1, 0xff00ff, 1.0);
+        let offset=0.17;
+        engine.draw_debug_sphere([location.x+offset*Math.cos(heading), location.y+offset*Math.sin(heading), location.z+offset], 0.1, 0xffffff, 1.0);
+        let eye_offset=0.173;
+        engine.draw_debug_sphere([location.x+eye_offset*Math.cos(heading), location.y+eye_offset*Math.sin(heading), location.z+eye_offset], 0.096, 0x000000, 1.0);
     }
 
     // To monitor key presses, I got the three lines below from
@@ -91,7 +94,7 @@
             sphere.y += (v[1] / Math.sqrt(v[0]**2+v[1]**2)) * dt;
         }
 
-        draw_robot(engine, sphere);
+        draw_robot(engine, sphere, theta);
         z_up_set_object_pose_from_SO3_matrix_and_position(engine.camera, [[1,0,0],[0,0,-1],[0,1,0]], [sphere.x, sphere.y-2, sphere.z+1]);
         // z_up_set_object_position(engine.camera, camera_x, camera_y, camera_z);
     });
