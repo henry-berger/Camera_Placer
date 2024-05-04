@@ -20,18 +20,46 @@
 </head>
 <body>
 <script type="module">
-    import {get_default_lil_gui, refresh_displays, ThreeEngine, z_up_set_object_pose_from_SO3_matrix_and_position} from "../js/utils/utils_three.js";
+    import {get_default_lil_gui, refresh_displays, ThreeEngine, z_up_get_object_pose_as_SO3_matrix_and_position, z_up_set_object_pose_from_SO3_matrix_and_position} from "../js/utils/utils_three.js";
+    import {mul_matrix_matrix} from "../js/utils/utils_math.js";
+
+    function Rx(theta) {
+        let sin = Math.sin(theta);
+        let cos = Math.cos(theta);
+        return [[1, 0, 0],
+            [0,cos, -sin],
+            [0,sin, cos]];
+    }
+
+    function Ry(theta) {
+        let sin = Math.sin(theta);
+        let cos = Math.cos(theta);
+        return [[cos, 0, sin],
+            [0,1,0],
+            [-sin,0, cos]];
+    }
+
+    function Rz(theta) {
+        let sin = Math.sin(theta);
+        let cos = Math.cos(theta);
+        return [[cos, -sin, 0],
+            [sin,cos, 0],
+            [0,0,1]];
+    }
     let engine = ThreeEngine.new_default_3d();
 
     let V_RUN = 3;
     let V_JUMP = 5;
     let OMEGA = 1;
+    let CAMERA_BASE = [[1,0,0],[0,0,-1],[0,1,0]];
+    let CAMERA_VIZ = [[0,0,-1],[0,1,0],[1,0,0]];
 
     let time = 0;
 
     let sphere = {x: 0, y: 0, z: 0};
     let v_z = 0;
     let theta = 0;
+    let heading=0;
 
     let W = 87;
     let A = 65
@@ -92,11 +120,19 @@
         if (v[0]**2+v[1]**2 > 0) {
             sphere.x += (v[0] / Math.sqrt(v[0]**2+v[1]**2)) * dt;
             sphere.y += (v[1] / Math.sqrt(v[0]**2+v[1]**2)) * dt;
+            heading = Math.atan2(v[1],v[0]);
         }
 
+
         draw_robot(engine, sphere, theta);
-        z_up_set_object_pose_from_SO3_matrix_and_position(engine.camera, [[1,0,0],[0,0,-1],[0,1,0]], [sphere.x, sphere.y-2, sphere.z+1]);
+        // let camera_orn = mul_matrix_matrix(Rz(theta), [[0,-1,0],[1,0,0],[0,0,-1]]);
+        let camera_orn = mul_matrix_matrix(Rz(heading), CAMERA_BASE);
+        camera_orn = mul_matrix_matrix(camera_orn, CAMERA_VIZ)
+        console.log(camera_orn);
+        let camera_pos = [sphere.x-2*Math.cos(heading), sphere.y-2*Math.sin(heading), sphere.z+1]
+        z_up_set_object_pose_from_SO3_matrix_and_position(engine.camera, camera_orn, camera_pos);
         // z_up_set_object_position(engine.camera, camera_x, camera_y, camera_z);
+        console.log(z_up_get_object_pose_as_SO3_matrix_and_position(engine.camera));
     });
 
 
