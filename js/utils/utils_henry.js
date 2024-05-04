@@ -53,6 +53,10 @@ export function hat(v) {
         [-v[1], v[0],0]];
 }
 
+export function dot(x, y) {
+    return x[0]*y[0]+x[1]*y[1]+x[2]*y[2];
+}
+
 export function so3_exp(m) {
     let a = m[2][1];
     let b = m[0][2];
