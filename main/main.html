@@ -130,42 +130,51 @@
             let zhat = camera_orn.map(row => -row[2]);
             let pnorm = Math.sqrt(pos_disp[0]**2+pos_disp[1]**2+pos_disp[2]**2);
             let phat = [pos_disp[0]/pnorm, pos_disp[1]/pnorm, pos_disp[2]/pnorm];
-            let vnorm = Math.sqrt(v[0]**2+v[1]**2+(v[2]/2)**2);
+            let vnorm = Math.sqrt(v[0]**2+v[1]**2+(v[2]/5)**2);
 
             //
 
             //******************* Cost term constants **************************
             let GOAL_DIST = 3;
-            let GOAL_HEIGHT = 1
+            let GOAL_HEIGHT = 0.4;
             let W_DIST = 1;
             let W_HT = 1;
             let W_XSIGHT = 1;
             let W_YSIGHT = 1;
+            let W_ZSIGHT = 3;
             let W_AIM = 1;
+            let W_AIM_2 = 0.1;
             let W_TWIST_BARR = 1;
-            let W_TWIST = 3;
+            let TWIST_LIM = 0.1;
+            let W_TWIST = 0.25;
             let W_UPRIGHT = 1;
             //******************* Cost term calculations **************************
 
 
             let dist_term = (dot(pos_disp, pos_disp)-GOAL_DIST)**2;
-            let height_term = (x[2]-GOAL_HEIGHT)**2;
+            // let height_term = (x[2]-GOAL_HEIGHT)**2;
+            let height_term = barrier(x[2]-GOAL_HEIGHT);
             let x_sight_term = (dot(phat, xhat))**2;
             let y_sight_term = (dot(phat, yhat))**2;
+            let z_sight_term = barrier(dot(phat, zhat));
             let twist_term = dist_se4(x_to_se3(prev_x), x_to_se3(x))**2;
             let aim_term = 0;
+            let aim_term_2 = 0;
             if (vnorm > 0) {
-                let vhat = [v[0]/vnorm, v[1]/vnorm, (v[2]/2)/vnorm];
+                let vhat = [v[0]/vnorm, v[1]/vnorm, (v[2]/5)/vnorm];
                 aim_term = barrier(dot(zhat, vhat));
+                aim_term_2 = (1-dot(zhat, vhat))**2;
             }
             let upright_term = barrier(dot(zhat, [0,0,1]));
             return W_DIST * dist_term
                 + W_HT * height_term
                 + W_XSIGHT * x_sight_term
                 + W_YSIGHT * y_sight_term
+                + W_ZSIGHT * z_sight_term
                 + W_AIM * aim_term
+                + W_AIM_2 * aim_term_2
                 + W_TWIST * twist_term
-                + W_TWIST_BARR * barrier(0.05-twist_term)
+                + W_TWIST_BARR * barrier(TWIST_LIM-twist_term)
                 + W_UPRIGHT * upright_term;
         }
 
