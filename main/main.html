@@ -199,11 +199,11 @@
                 + W_UPRIGHT * upright_term;
         }
 
-        x = prev_x.map(number => number + Math.random() / 10);
+        x = prev_x.map(number => number + (Math.random()-0.5) / 10);
         x = optimization_solve(f, x, 200,"bfgs");
         while (Math.max(...x) > 30 || Math.min(...x)<-30 || anyNaN(x)) {
             console.log("Trying again");
-            x = prev_x.map(number => number + Math.random() / 10);
+            x = prev_x.map(number => number + (Math.random()-0.5) / 10);
             x = optimization_solve(f, [0,0,0,0,0], 200,"bfgs");
             console.log(x)
         }
