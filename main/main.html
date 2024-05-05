@@ -147,7 +147,7 @@
         function f(x) {
             //******************* Geometric calculations **************************
             // Aim at a point 0.75m above the sphere
-            let pos_disp = [sphere.x-x[0], sphere.y-x[1], 0.75+sphere.z-x[2]];
+            let pos_disp = [sphere.x-x[0], sphere.y-x[1], 0.9+sphere.z-x[2]];
             let camera_orn = x_to_so3(x)
             let xhat = camera_orn.map(row => row[0]);
             let yhat = camera_orn.map(row => row[1]);
@@ -161,8 +161,8 @@
 
             //******************* Cost term constants **************************
             let GOAL_DIST = 3;
-            let MIN_HEIGHT= 0.4;
-            let MAX_HEIGHT = 1.6;
+            let MIN_HEIGHT= 0.55;
+            let MAX_HEIGHT = 1.75;
             let W_DIST = 1;
             let W_HT = 1;
             let W_XSIGHT = 1;
